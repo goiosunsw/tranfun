@@ -45,7 +45,7 @@ classdef playrec < handle
                 warn(sprintf("Output device %d not present",outputDeviceID))
             end
             if maxTime>length(y)
-                nreps = ceil(maxTime/length(y))
+                nreps = ceil(maxTime/length(y));
                 y = repmat(y,nreps,1);
             end
             obj.outputData = y;
@@ -59,7 +59,7 @@ classdef playrec < handle
             obj.inputDevice = audiorecorder(obj.Fs, obj.NBits, obj.NInputChans, inputID);
         end
         function start(obj)
-            obj.outputDevice.stopFcn = @(src, event) play(obj.outputDevice);
+            %obj.outputDevice.stopFcn = @(src, event) play(obj.outputDevice);
             play(obj.outputDevice);
             obj.inputDevice.startFcn = @(src, event) disp(["Player sample number at start: ", num2str(obj.outputDevice.CurrentSample)]);
             record(obj.inputDevice);
