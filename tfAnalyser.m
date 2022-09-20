@@ -5,13 +5,11 @@ global calib
 global winLen
 global nFr
 
-inDevID = 7;
-outDevID = 7;
 
 sr = 8000;
 winLen = 512;
 
-[inDevID, outDevId, sr, winLen, nFr, recTime] = deviceSelector
+[inDevID, outDevID, sr, winLen, nFr, recTime] = deviceSelector
 
 calib = ones(round(winLen/2+1),1);
 
