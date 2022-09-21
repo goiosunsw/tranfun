@@ -1,6 +1,6 @@
 %% Parameters
-Device = 'Realtek ASIO'; % Put the device you want, it should be available in the list.
-SampleRate = 44100; % Hz
+Device = 'Default'; % Put the device you want, it should be available in the list.
+SampleRate = 16000; % Hz
 BitDepth = '16-bit integer'; % Or: '8-bit integer' , '32-bit float' , '24-bit integer'
 SamplesPerFrame = 512;
 outputChannel = 1;
@@ -70,13 +70,13 @@ nfft = 2^15;
 %% Graphics
 figure('Color',[1 1 1])
 
-nexttile
+subplot(2,1,1)
 plot(t,IR./max(IR),'k')
 xlabel('Time [s]')
 ylabel('Amplitude [normalized]')
 ylim([-1,1]);
 
-nexttile
+subplot(2,1,2)
 semilogx(f,20*log10(abs(H)/2e-5),'k')
 xlabel('Frequency [Hz]')
 ylabel('SPL [dB]')
