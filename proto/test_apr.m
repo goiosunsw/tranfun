@@ -1,6 +1,6 @@
 %% Parameters
-Device = 'MOTU 896HD'; % Put the device you want, it should be available in the list.
-SampleRate = 44100; % Hz
+Device = 'Default'; % Put the device you want, it should be available in the list.
+SampleRate = 16000; % Hz
 BitDepth = '16-bit integer'; % Or: '8-bit integer' , '32-bit float' , '24-bit integer'
 SamplesPerFrame = 512;
 outputChannel = 1;
