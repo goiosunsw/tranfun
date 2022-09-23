@@ -4,9 +4,9 @@ Fs = 8000;
 
 [y,bins] = multiTone(Fs,nTones,wind,Fs);
 
-delay= wind*20+round(wind/3);
+delay= 0;
 yr = zeros(length(y)+delay,1);
-yr(end-length(y)+1:end) = y+max(y)*randn(size(y))/10;
+yr(end-length(y)+1:end) = y+max(y)*randn(size(y))/100;
 figure()
 spectrogram(yr,wind,wind/4*3,wind,'yaxis');
 
@@ -27,4 +27,4 @@ hold all
 subplot(212)
 plot(irec,n(m>0));
 
-disp(polyfit(find(m>0),m(m>0),1))
+disp(polyfit(find(m>thr)/8,m(m>thr),1))
