@@ -16,9 +16,10 @@ classdef playrec < handle
         lastOutSample
         currentInSample
         currentOutSample
+        userData
     end
     methods
-        function obj = playrec(y, inputDeviceID, outputDeviceID, Fs, NInputChans, maxTime);
+        function obj = playrec(y, inputDeviceID, outputDeviceID, Fs, NInputChans, maxTime)
             if nargin<6
                 maxTime = length(y);
             end
@@ -75,7 +76,7 @@ classdef playrec < handle
             obj.outputDevice.stopFcn = [];
             stop(obj.outputDevice);
         end
-        function timerFcn(obj, src, event)
+        function timerFcn(obj, ~, ~)
             obj.lastInSample = obj.currentInSample;
             obj.lastOutSample = obj.currentOutSample;
             obj.currentInSample = obj.inputDevice.CurrentSample-1;

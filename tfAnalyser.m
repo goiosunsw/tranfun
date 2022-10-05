@@ -9,7 +9,12 @@ global nFr
 sr = 8000;
 winLen = 512;
 
-[inDevID, outDevID, sr, winLen, nFr, recTime] = deviceSelector;
+
+pr = deviceSelector();
+sr = pr.Fs;
+winLen = pr.userData.winLen;
+nFr = pr.userData.nFr;
+
 
 calib = ones(round(winLen/2+1),1);
 
@@ -45,19 +50,18 @@ hDelay = uicontrol('Parent', hFig,...
                        'Callback', @delayCallback);
 
 y = rand(sr,1);
-pr = playrec(y,inDevID,outDevID,sr,1,recTime*sr);
 pr.setCallback(@plotCallback,winLen*nFr/sr);
 pr.setDelay(120);
 
 running=0;
-function delayCallback(src, event)
+function delayCallback(src, ~)
     global pr
     global sr
     newdel=(get(src,'Value'))/1000*sr;
     pr.setDelay(round(newdel));
 end
 
-function startStopCallback(src, event)
+function startStopCallback(~, ~)
     global running
     global pr
 
