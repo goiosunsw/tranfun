@@ -9,7 +9,7 @@ global nFr
 sr = 8000;
 winLen = 512;
 
-[inDevID, outDevID, sr, winLen, nFr, recTime] = deviceSelector
+[inDevID, outDevID, sr, winLen, nFr, recTime] = deviceSelector;
 
 calib = ones(round(winLen/2+1),1);
 

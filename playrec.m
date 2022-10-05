@@ -48,12 +48,15 @@ classdef playrec < handle
                 nreps = ceil(maxTime/length(y));
                 y = repmat(y,nreps,1);
             end
-            obj.outputData = y;
-            obj.outputDevice = audioplayer(y, Fs, obj.NBits, outputDeviceID);
-            obj.inputDevice.UserData = obj.outputDevice;
+            obj.setOutput(y)
             obj.inputDevice.TimerFcn = @obj.timerFcn;
             obj.userCallback = [];
             obj.delayOutputToInput = 100;
+        end
+        function setOutput(obj, y)
+            obj.outputData = y;
+            obj.outputDevice = audioplayer(y, obj.Fs, obj.NBits, obj.outputDeviceID);
+            obj.inputDevice.UserData = obj.outputDevice;
         end
         function setInputDevice(obj, inputID)
             obj.inputDevice = audiorecorder(obj.Fs, obj.NBits, obj.NInputChans, inputID);
@@ -61,13 +64,13 @@ classdef playrec < handle
         function start(obj)
             %obj.outputDevice.stopFcn = @(src, event) play(obj.outputDevice);
             play(obj.outputDevice);
-            obj.inputDevice.startFcn = @(src, event) disp(["Player sample number at start: ", num2str(obj.outputDevice.CurrentSample)]);
+            %obj.inputDevice.startFcn = @(src, event) disp(["Player sample number at start: ", num2str(obj.outputDevice.CurrentSample)]);
             record(obj.inputDevice);
         end
         function stop(obj)
-            disp(["Sample numbers at end:"])
-            disp(["Rec :" num2str(obj.inputDevice.CurrentSample)])
-            disp(["Play:" num2str(obj.outputDevice.CurrentSample)])
+            %disp(["Sample numbers at end:"])
+            %disp(["Rec :" num2str(obj.inputDevice.CurrentSample)])
+            %disp(["Play:" num2str(obj.outputDevice.CurrentSample)])
             stop(obj.inputDevice);
             obj.outputDevice.stopFcn = [];
             stop(obj.outputDevice);
