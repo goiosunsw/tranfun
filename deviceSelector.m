@@ -110,7 +110,6 @@ function [devInID, devOutID, Fs, winLen, nBlock, recTime,delay] = deviceSelector
         winLen = (currentWindow);
         nBlock = ((selBlockLen.Value));
         recTime = selRecTime.Value;
-        requestDelayEstimation();
         close(fig);
     end
 
