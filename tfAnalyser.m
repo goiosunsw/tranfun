@@ -14,6 +14,61 @@ winLen = 512;
 resyncEvery = 2;
 useCalibration = 1;
 
+
+%% Setup window
+hFig = uifigure('Name','Transfer Function Estimator','NumberTitle','off');
+set(hFig,'CloseRequestFcn',@closeFigCallback);
+
+hGrid1 = uigridlayout(hFig);
+hGrid1.RowHeight = {'1x','1x','1x',32,32};
+hGrid1.ColumnWidth = {'1x','1x','2x'};
+
+hAxes1 = uiaxes(hGrid1);
+hAxes1.Layout.Row = 1;
+hAxes1.Layout.Column = [1,3];
+hAxes2 = uiaxes(hGrid1);
+hAxes2.Layout.Row = 2;
+hAxes2.Layout.Column = [1,3];
+hAxes3 = uiaxes(hGrid1);
+hAxes3.Layout.Row = 3;
+hAxes3.Layout.Column = [1,3];
+
+hAxes = [hAxes1,hAxes2,hAxes3];
+
+hStartStop = uibutton(hGrid1, 'push', ...
+                       'Text', 'Start/Stop',...
+                       'ButtonPushedFcn', @startStopCallback);
+hStartStop.Layout.Row = 4;
+hStartStop.Layout.Column = 1;
+
+hCalib = uibutton(hGrid1, 'push', ...
+                       'Text', 'Use as calib',...
+                       'ButtonPushedFcn', @calibCallback);
+hCalib.Layout.Row = 4;
+hCalib.Layout.Column = 2;
+                   
+hGrid2 = uigridlayout(hGrid1, [1,2]);
+hGrid2.RowHeight = {32};
+hGrid2.ColumnWidth = {'1x',30};
+hGrid2.Layout.Row = 4;
+hGrid2.Layout.Column = 3;
+
+hDelay = uislider(hGrid2,...
+                       'Limits', [-1000, 1000],...
+                       'ValueChangedFcn', @delayCallback,...
+                       'ValueChangingFcn', @delayChgCallback);
+
+hDelayLbl = uilabel(hGrid2,...
+                       'Text', '0')
+
+hUseCalib = uicheckbox( hGrid1,...
+                       'Text', 'Use Calibration',...
+                       'Value', 1,...
+                       'ValueChangedFcn', @useCalibCallback);
+hUseCalib.Layout.Row = 5;
+hUseCalib.Layout.Column = 1;
+
+%% Run calibration setup
 pr = deviceSetup();
 sr = pr.Fs;
 winLen = pr.userData.winLen;
@@ -21,73 +76,34 @@ nFr = pr.userData.nFr;
 pr.userData.resyncEverySamples = resyncEvery*sr;
 pr.userData.lastResync = 0;
 
+%% Generate noise
 y = rand(sr,1);
 pr.setOutput(y);
 
 calib = ones(round(winLen/2+1),1);
 
-
-hFig = figure('Name','Transfer Function Estimator','NumberTitle','off');
-set(hFig,'CloseRequestFcn',@closeFigCallback);
-
-hAxes3 = axes(hFig, 'Units', 'normalized', 'Position', [0.1,0.3,0.8,0.2]);
-hAxes2 = axes(hFig, 'Units', 'normalized', 'Position', [0.1,0.5,0.8,0.2]);
-hAxes1 = axes(hFig, 'Units', 'normalized', 'Position', [0.1,0.7,0.8,0.2]);
-hAxes = [hAxes1,hAxes2,hAxes3];
-hStartStop = uicontrol('Parent', hFig,...
-                       'Style', 'pushbutton',...
-                       'String', 'Start/Stop',...
-                       'Units', 'normalized',...
-                       'Position', [0.1,0.15,0.4,0.1],...
-                       'Callback', @startStopCallback);
-
-hCalib = uicontrol('Parent', hFig,...
-                       'Style', 'pushbutton',...
-                       'String', 'Use as calib',...
-                       'Units', 'normalized',...
-                       'Position', [0.1,0.05,0.4,0.1],...
-                       'Callback', @calibCallback);
-
-hDelay = uicontrol('Parent', hFig,...
-                       'Style', 'slider',...
-                       'Min', -1000,...
-                       'Max', 1000,...
-                       'SliderStep',[1/sr,0.05],...
-                       'Units', 'normalized',...
-                       'Position', [0.5,0.1,0.3,0.05],...
-                       'Callback', @delayCallback);
-
-hDelayLbl = uicontrol('Parent', hFig,...
-                       'Style', 'text',...
-                       'String', '0',...
-                       'Units', 'normalized',...
-                       'Position', [0.85,0.1,0.1,0.05]);
-
-hUseCalib = uicontrol('Parent', hFig,...
-                       'Style', 'checkbox',...
-                       'String', 'Use Calibration',...
-                       'Value', 1,...
-                       'Units', 'normalized',...
-                       'Position', [0.1,0.05,0.1,0.05],...
-                       'Callback', @useCalibCallback);
-                   
-y = rand(sr,1);
 pr.setCallback(@plotCallback,winLen*nFr/sr);
 delay = pr.delayOutputToInput;
 set(hDelay,'Value',delay/sr*1000);
-set(hDelayLbl,'string',sprintf('%d',delay/sr*1000));
+set(hDelayLbl,'Text',sprintf('%d',delay/sr*1000));
 
 running=0;
 
 function delayCallback(src, ~)
     global pr
     global sr
-    global hDelayLbl
     
     newdel=(get(src,'Value'))/1000*sr;
     pr.setDelay(round(newdel));
-    set(hDelayLbl,'string',sprintf('%d',newdel));
 end
+
+function delayChgCallback(src, ~)
+    global hDelayLbl
+    
+    newdel=round(get(src,'Value'));
+    set(hDelayLbl,'Text',sprintf('%d',newdel));
+end
+
 
 function startStopCallback(~, ~)
     global running
@@ -139,13 +155,15 @@ function plotCallback(mypr)
     y = inData(inPtr-n:inPtr);
     % calculate Transfer Function
     [h,f] = tfestimate(x,y,winLen,hopLen,winLen,sr);
+    % divide by calibration if requested
     if useCalibration
         h=h./calib;
-    else
-        h=h
     end
+    % plot transfer function -- module
     plot(hAxes(1),f,20*log10(abs(h)));
+    % phase
     plot(hAxes(2),f,(angle(h)));
+    % coherence
     [co,f] = mscohere(x,y,winLen,hopLen,winLen,sr);
     plot(hAxes(3),f,(co));
 end
