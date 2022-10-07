@@ -4,12 +4,25 @@ global sr
 global calib
 global winLen
 global nFr
+global useCalibration
+global hDelayLbl
 
 
 sr = 8000;
 winLen = 512;
+% calculate delay every X seconds
+resyncEvery = 2;
+useCalibration = 1;
 
-[inDevID, outDevID, sr, winLen, nFr, recTime] = deviceSelector;
+pr = deviceSetup();
+sr = pr.Fs;
+winLen = pr.userData.winLen;
+nFr = pr.userData.nFr;
+pr.userData.resyncEverySamples = resyncEvery*sr;
+pr.userData.lastResync = 0;
+
+y = rand(sr,1);
+pr.setOutput(y);
 
 calib = ones(round(winLen/2+1),1);
 
@@ -41,23 +54,42 @@ hDelay = uicontrol('Parent', hFig,...
                        'Max', 1000,...
                        'SliderStep',[1/sr,0.05],...
                        'Units', 'normalized',...
-                       'Position', [0.5,0.1,0.4,0.05],...
+                       'Position', [0.5,0.1,0.3,0.05],...
                        'Callback', @delayCallback);
 
+hDelayLbl = uicontrol('Parent', hFig,...
+                       'Style', 'text',...
+                       'String', '0',...
+                       'Units', 'normalized',...
+                       'Position', [0.85,0.1,0.1,0.05]);
+
+hUseCalib = uicontrol('Parent', hFig,...
+                       'Style', 'checkbox',...
+                       'String', 'Use Calibration',...
+                       'Value', 1,...
+                       'Units', 'normalized',...
+                       'Position', [0.1,0.05,0.1,0.05],...
+                       'Callback', @useCalibCallback);
+                   
 y = rand(sr,1);
-pr = playrec(y,inDevID,outDevID,sr,1,recTime*sr);
 pr.setCallback(@plotCallback,winLen*nFr/sr);
-pr.setDelay(120);
+delay = pr.delayOutputToInput;
+set(hDelay,'Value',delay/sr*1000);
+set(hDelayLbl,'string',sprintf('%d',delay/sr*1000));
 
 running=0;
-function delayCallback(src, event)
+
+function delayCallback(src, ~)
     global pr
     global sr
+    global hDelayLbl
+    
     newdel=(get(src,'Value'))/1000*sr;
     pr.setDelay(round(newdel));
+    set(hDelayLbl,'string',sprintf('%d',newdel));
 end
 
-function startStopCallback(src, event)
+function startStopCallback(~, ~)
     global running
     global pr
 
@@ -68,6 +100,7 @@ function startStopCallback(src, event)
     else
         pr.start()
         running = 1;
+        pr.userData.lastResync = 0;
     end
 end
 
@@ -77,20 +110,40 @@ function plotCallback(mypr)
     global calib
     global winLen
     global nFr
+    global useCalibration
+    
     hopLen = round(winLen/2);
     %x = mypr.getOutputDataSinceLastCall();
     %y = mypr.getInputDataSinceLastCall();
     % get n Frames of Data
+    
     n = winLen*nFr;
     delay = mypr.delayOutputToInput;
     inPtr = mypr.inputDevice.CurrentSample-1;
     outPtr = inPtr+delay;
+    
+    if mypr.userData.lastResync < mypr.currentOutSample - mypr.userData.resyncEverySamples
+        ndelay = 1024;
+        x = mypr.outputData(outPtr-ndelay:outPtr);
+        inData = mypr.inputDevice.getaudiodata();
+        y = inData(inPtr-ndelay:inPtr);
+        
+        [cc, lags] = xcorr(y,x);
+        [v,mc] = max(abs(cc));
+        fprintf("Out of sync by %d samples\n",lags(mc));
+        mypr.userData.lastResync = mypr.currentOutSample;
+    end
+    
     x = mypr.outputData(outPtr-n:outPtr);
     inData = mypr.inputDevice.getaudiodata();
     y = inData(inPtr-n:inPtr);
     % calculate Transfer Function
     [h,f] = tfestimate(x,y,winLen,hopLen,winLen,sr);
-    h=h./calib;
+    if useCalibration
+        h=h./calib;
+    else
+        h=h
+    end
     plot(hAxes(1),f,20*log10(abs(h)));
     plot(hAxes(2),f,(angle(h)));
     [co,f] = mscohere(x,y,winLen,hopLen,winLen,sr);
@@ -115,6 +168,11 @@ function calibCallback(src,event)
     disp([length(x),length(y)]);
     [h,f] = tfestimate(x,y,winLen,hopLen,winLen,sr);
     calib = h;
+end
+
+function useCalibCallback(src, event)
+    global useCalibration
+    useCalibration = get(src,'Value');
 end
 
 function closeFigCallback(src, event)

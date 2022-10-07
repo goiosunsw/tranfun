@@ -1,5 +1,6 @@
-function [devInID, devOutID, Fs, winLen, nBlock, recTime] = deviceSelector()
+function [devInID, devOutID, Fs, winLen, nBlock, recTime,delay] = deviceSelector()
 
+    delay = 0;
     devInfo = audiodevinfo();
     % screen size
     sz = get( 0, 'ScreenSize');
