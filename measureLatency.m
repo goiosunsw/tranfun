@@ -40,12 +40,21 @@ as = as./max(as')';
 
 thr = nmatch;
 
+% number of good matches
+ngood = sum(n>thr);
+good_frac = ngood/length(n);
+fprintf("%% matched: %d\n", round(good_frac*100));
+midx = find(n>thr);
+
+fprintf("Match quality: %d\n",round(100*mean(n(midx(1):midx(end))/ntones)));
+
 % delay between recorded tones and expected
 % recorded tone positions are divided by 8:
 % - hop size is 1/4 of window size
 % - each generated tone spans 2 windows
 delay_tones = median(find(n>thr)/8-m(n>thr));
 delay = (delay_tones+.5)*wind*2;
+fprintf("Rough delay %d\n", round(delay));
 fprintf("delay: %d\n",delay);
 
 if delay > 0
