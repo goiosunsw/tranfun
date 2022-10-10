@@ -20,37 +20,53 @@ hFig = uifigure('Name','Transfer Function Estimator','NumberTitle','off');
 set(hFig,'CloseRequestFcn',@closeFigCallback);
 
 hGrid1 = uigridlayout(hFig);
-hGrid1.RowHeight = {'1x','1x','1x',32,32};
+hGrid1.RowHeight = {'1x','fit','fit'};
 hGrid1.ColumnWidth = {'1x','1x','2x'};
 
-hAxes1 = uiaxes(hGrid1);
-hAxes1.Layout.Row = 1;
-hAxes1.Layout.Column = [1,3];
-hAxes2 = uiaxes(hGrid1);
-hAxes2.Layout.Row = 2;
-hAxes2.Layout.Column = [1,3];
-hAxes3 = uiaxes(hGrid1);
-hAxes3.Layout.Row = 3;
-hAxes3.Layout.Column = [1,3];
+hGridAx = uigridlayout(hGrid1);
+hGridAx.RowHeight = {'1x','3x','3x','3x'};
+hGridAx.ColumnWidth = {'1x'};
+set(hGridAx,'RowSpacing',0);
+hGridAx.Layout.Column = [1,3];
+hGridAx.Layout.Row = 1;
+
+hGraphScale = uiaxes(hGridAx,'InnerPosition',[.1,0,.9,1],'Units','normalized','PositionConstraint','innerposition');
+hGraphScale.Layout.Row = 1;
+set(hGraphScale,'Visible',false);
+noteGrid(hGraphScale,100,4000,[1,1,1]);
+drawStaves(hGraphScale,100,4000);
+xticklabels(hGraphScale,{});
+
+%axis off;
+hAxes1 = uiaxes(hGridAx);
+xticklabels(hAxes1,{});
+hAxes1.Layout.Row = 2;
+hAxes2 = uiaxes(hGridAx);
+xticklabels(hAxes2,{});
+hAxes2.Layout.Row = 3;
+hAxes3 = uiaxes(hGridAx);
+hAxes3.Layout.Row = 4;
+
 
 hAxes = [hAxes1,hAxes2,hAxes3];
+%linkaxes([hAxes1,hAxes2,hAxes3,hGraphScale],'x')
 
 hStartStop = uibutton(hGrid1, 'push', ...
                        'Text', 'Start/Stop',...
                        'ButtonPushedFcn', @startStopCallback);
-hStartStop.Layout.Row = 4;
+hStartStop.Layout.Row = 2;
 hStartStop.Layout.Column = 1;
 
 hCalib = uibutton(hGrid1, 'push', ...
                        'Text', 'Use as calib',...
                        'ButtonPushedFcn', @calibCallback);
-hCalib.Layout.Row = 4;
+hCalib.Layout.Row = 3;
 hCalib.Layout.Column = 2;
                    
 hGrid2 = uigridlayout(hGrid1, [1,2]);
 hGrid2.RowHeight = {32};
 hGrid2.ColumnWidth = {'1x',30};
-hGrid2.Layout.Row = 4;
+hGrid2.Layout.Row = 2;
 hGrid2.Layout.Column = 3;
 
 hDelay = uislider(hGrid2,...
@@ -65,8 +81,10 @@ hUseCalib = uicheckbox( hGrid1,...
                        'Text', 'Use Calibration',...
                        'Value', 1,...
                        'ValueChangedFcn', @useCalibCallback);
-hUseCalib.Layout.Row = 5;
+hUseCalib.Layout.Row = 3;
 hUseCalib.Layout.Column = 1;
+
+
 
 %% Run calibration setup
 pr = deviceSetup();
